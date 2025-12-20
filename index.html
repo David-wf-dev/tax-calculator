@@ -2,21 +2,454 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Tax Calculator</title>
+  <title>Contractor Tax Calculator</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
+    :root {
+      --bg: #ffffff;
+      --text: #0b1220;
+      --muted: rgba(11, 18, 32, 0.65);
+      --border: rgba(11, 18, 32, 0.12);
+      --shadow: 0 16px 48px rgba(11, 18, 32, 0.08);
+      --radius: 16px;
+      --radius-sm: 12px;
+      --focus: 0 0 0 4px rgba(20, 110, 255, 0.18);
+      --brand: #146eff;
+      --danger: #d92d20;
+      --success: #079455;
+    }
+
+    * { box-sizing: border-box; }
+
     body {
       font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
       margin: 0;
-      padding: 24px;
-      background: #ffffff;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    /* Webflow-style layout primitives (kept small on purpose) */
+    .page-wrapper { min-height: 100vh; padding: 48px 20px; }
+    .container { max-width: 1040px; margin: 0 auto; }
+    .section { padding: 0; }
+
+    .grid-2col {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    @media (max-width: 991px) {
+      .page-wrapper { padding: 32px 16px; }
+      .grid-2col { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+      background: #fff;
+    }
+
+    .stack { display: flex; flex-direction: column; gap: 14px; }
+    .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .row-between { justify-content: space-between; }
+
+    .heading-xl { font-size: 34px; line-height: 1.15; margin: 0 0 8px; letter-spacing: -0.02em; }
+    .heading-md { font-size: 18px; line-height: 1.3; margin: 0; letter-spacing: -0.01em; }
+    .text-muted { color: var(--muted); margin: 0; }
+    .text-sm { font-size: 13px; line-height: 1.4; }
+
+    .form-field { display: grid; gap: 8px; }
+    .label { font-size: 13px; font-weight: 600; }
+
+    .input, .select {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 11px 12px;
+      font-size: 14px;
+      outline: none;
+      background: #fff;
+      color: var(--text);
+      transition: box-shadow 160ms ease, border-color 160ms ease, transform 160ms ease;
+    }
+
+    .input:focus, .select:focus { box-shadow: var(--focus); border-color: rgba(20, 110, 255, 0.35); }
+
+    .help, .error {
+      font-size: 12px;
+      margin: 0;
+    }
+
+    .help { color: var(--muted); }
+    .error { color: var(--danger); display: none; }
+    .field-invalid .input, .field-invalid .select { border-color: rgba(217, 45, 32, 0.45); }
+    .field-invalid .error { display: block; }
+
+    .segmented {
+      display: inline-flex;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 4px;
+      background: rgba(11, 18, 32, 0.03);
+      gap: 4px;
+    }
+
+    .segmented-button {
+      border: 0;
+      border-radius: 999px;
+      padding: 8px 10px;
+      font-size: 13px;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      transition: background 160ms ease, color 160ms ease, transform 160ms ease;
+    }
+
+    .segmented-button[aria-pressed="true"] {
+      background: #fff;
+      color: var(--text);
+      box-shadow: 0 8px 18px rgba(11, 18, 32, 0.08);
+    }
+
+    .button {
+      width: 100%;
+      border: 1px solid rgba(20, 110, 255, 0.25);
+      background: var(--brand);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      cursor: pointer;
+      transition: transform 120ms ease, opacity 120ms ease, box-shadow 160ms ease;
+      box-shadow: 0 12px 24px rgba(20, 110, 255, 0.16);
+    }
+
+    .button:hover { transform: translateY(-1px); }
+    .button:active { transform: translateY(0px); }
+    .button:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+    /* Results: hidden until valid input + smooth reveal */
+    .results {
+      overflow: hidden;
+      max-height: 0;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: max-height 360ms ease, opacity 240ms ease, transform 240ms ease;
+      will-change: max-height, opacity, transform;
+    }
+
+    .results.is-visible {
+      max-height: 520px;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .results-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .metric {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      background: rgba(11, 18, 32, 0.02);
+    }
+
+    .metric .k { font-size: 12px; color: var(--muted); margin: 0 0 6px; }
+    .metric .v { font-size: 18px; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(11, 18, 32, 0.02);
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--success);
+      display: inline-block;
     }
   </style>
 </head>
 <body>
 
-  <h1>Tax Calculator</h1>
-  <p>Initial setup – embedded via GitHub Pages.</p>
+  <div class="page-wrapper">
+    <div class="container section">
+      <div class="stack" style="gap: 18px;">
+        <div class="stack" style="gap: 10px;">
+          <h1 class="heading-xl">Contractor Tax Calculator</h1>
+          <p class="text-muted">Estimate taxes using simple flat rates per country. Enter your income, choose monthly or annual, and see net income instantly.</p>
+        </div>
+
+        <div class="grid-2col">
+          <!-- Calculator -->
+          <div class="card">
+            <div class="stack">
+              <div class="row row-between">
+                <h2 class="heading-md">Your details</h2>
+                <div class="segmented" role="group" aria-label="Income frequency">
+                  <button class="segmented-button" type="button" id="freqMonthly" aria-pressed="false">Monthly</button>
+                  <button class="segmented-button" type="button" id="freqAnnual" aria-pressed="true">Annual</button>
+                </div>
+              </div>
+
+              <div class="form-field" id="countryField">
+                <label class="label" for="country">Country</label>
+                <select class="select" id="country" name="country" required>
+                  <option value="">Select a country</option>
+                </select>
+                <p class="error" id="countryError">Please select a country.</p>
+              </div>
+
+              <div class="form-field" id="incomeField">
+                <label class="label" for="income">Income</label>
+                <input class="input" id="income" name="income" inputmode="decimal" autocomplete="off" placeholder="e.g. 120000" />
+                <p class="help" id="incomeHelp">Enter your gross income (<span id="freqLabel">annual</span>).</p>
+                <p class="error" id="incomeError">Enter a valid income greater than 0.</p>
+              </div>
+
+              <button class="button" id="calculate" type="button" disabled>Calculate</button>
+              <p class="text-muted text-sm">Rates are examples only. Replace the config with your real tax rules.</p>
+            </div>
+          </div>
+
+          <!-- Results -->
+          <div class="card" aria-live="polite">
+            <div class="row row-between" style="gap: 10px;">
+              <h2 class="heading-md">Results</h2>
+              <div class="badge" id="rateBadge" style="display:none;">
+                <span class="dot" aria-hidden="true"></span>
+                <span><span id="countryName">—</span> rate: <strong id="rateValue">—</strong></span>
+              </div>
+            </div>
+
+            <div class="results" id="results" hidden>
+              <div class="results-grid">
+                <div class="metric">
+                  <p class="k">Monthly tax</p>
+                  <p class="v" id="monthlyTax">—</p>
+                </div>
+                <div class="metric">
+                  <p class="k">Annual tax</p>
+                  <p class="v" id="annualTax">—</p>
+                </div>
+                <div class="metric">
+                  <p class="k">Monthly net</p>
+                  <p class="v" id="monthlyNet">—</p>
+                </div>
+                <div class="metric">
+                  <p class="k">Annual net</p>
+                  <p class="v" id="annualNet">—</p>
+                </div>
+              </div>
+
+              <div class="metric" style="margin-top: 12px;">
+                <p class="k">Effective tax rate</p>
+                <p class="v" id="effectiveRate">—</p>
+              </div>
+            </div>
+
+            <div class="text-muted text-sm" id="resultsHint">Fill in the form to see your results.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /**
+     * Sample flat-rate config (replace with your real rules).
+     * Rates are expressed as decimals (e.g. 0.30 = 30%).
+     */
+    const TAX_CONFIG = {
+      US: { label: "United States", rate: 0.30, currency: "USD" },
+      UK: { label: "United Kingdom", rate: 0.25, currency: "GBP" },
+      DE: { label: "Germany", rate: 0.35, currency: "EUR" },
+      FR: { label: "France", rate: 0.32, currency: "EUR" },
+      CA: { label: "Canada", rate: 0.28, currency: "CAD" },
+      AU: { label: "Australia", rate: 0.29, currency: "AUD" },
+    };
+
+    const els = {
+      country: document.getElementById("country"),
+      income: document.getElementById("income"),
+      calculate: document.getElementById("calculate"),
+      freqMonthly: document.getElementById("freqMonthly"),
+      freqAnnual: document.getElementById("freqAnnual"),
+      freqLabel: document.getElementById("freqLabel"),
+
+      countryField: document.getElementById("countryField"),
+      incomeField: document.getElementById("incomeField"),
+      countryError: document.getElementById("countryError"),
+      incomeError: document.getElementById("incomeError"),
+
+      results: document.getElementById("results"),
+      resultsHint: document.getElementById("resultsHint"),
+      rateBadge: document.getElementById("rateBadge"),
+      countryName: document.getElementById("countryName"),
+      rateValue: document.getElementById("rateValue"),
+      monthlyTax: document.getElementById("monthlyTax"),
+      annualTax: document.getElementById("annualTax"),
+      monthlyNet: document.getElementById("monthlyNet"),
+      annualNet: document.getElementById("annualNet"),
+      effectiveRate: document.getElementById("effectiveRate"),
+    };
+
+    let incomeFrequency = "annual"; // "monthly" | "annual"
+
+    function formatMoney(value, currency) {
+      try {
+        return new Intl.NumberFormat(undefined, {
+          style: "currency",
+          currency,
+          maximumFractionDigits: 0,
+        }).format(value);
+      } catch {
+        return `${currency} ${Math.round(value).toLocaleString()}`;
+      }
+    }
+
+    function parseIncome(raw) {
+      const cleaned = String(raw ?? "").trim().replace(/[, ]+/g, "");
+      if (!cleaned) return NaN;
+      const n = Number(cleaned);
+      return Number.isFinite(n) ? n : NaN;
+    }
+
+    function setFrequency(next) {
+      incomeFrequency = next;
+      const isMonthly = incomeFrequency === "monthly";
+      els.freqMonthly.setAttribute("aria-pressed", String(isMonthly));
+      els.freqAnnual.setAttribute("aria-pressed", String(!isMonthly));
+      els.freqLabel.textContent = isMonthly ? "monthly" : "annual";
+      validateAndMaybeCalculate({ shouldCalculate: false });
+    }
+
+    function showResults() {
+      els.results.hidden = false;
+      // force reflow so transition triggers from hidden state
+      void els.results.offsetHeight;
+      els.results.classList.add("is-visible");
+      els.resultsHint.style.display = "none";
+    }
+
+    function hideResults() {
+      els.results.classList.remove("is-visible");
+      els.results.hidden = true;
+      els.rateBadge.style.display = "none";
+      els.resultsHint.style.display = "";
+    }
+
+    function setFieldValidity(fieldEl, isValid) {
+      fieldEl.classList.toggle("field-invalid", !isValid);
+    }
+
+    function validate() {
+      const countryCode = els.country.value;
+      const income = parseIncome(els.income.value);
+
+      const countryValid = Boolean(countryCode && TAX_CONFIG[countryCode]);
+      const incomeValid = Number.isFinite(income) && income > 0;
+
+      setFieldValidity(els.countryField, countryValid);
+      setFieldValidity(els.incomeField, incomeValid);
+
+      const allValid = countryValid && incomeValid;
+      els.calculate.disabled = !allValid;
+
+      return { allValid, countryCode, income };
+    }
+
+    function calculate({ countryCode, income }) {
+      const config = TAX_CONFIG[countryCode];
+      const annualIncome = incomeFrequency === "monthly" ? income * 12 : income;
+      const monthlyIncome = annualIncome / 12;
+
+      const annualTax = annualIncome * config.rate;
+      const monthlyTax = annualTax / 12;
+
+      const annualNet = annualIncome - annualTax;
+      const monthlyNet = annualNet / 12;
+
+      const effRate = annualIncome > 0 ? (annualTax / annualIncome) : 0;
+
+      els.countryName.textContent = config.label;
+      els.rateValue.textContent = `${Math.round(config.rate * 1000) / 10}%`;
+      els.rateBadge.style.display = "";
+
+      els.monthlyTax.textContent = formatMoney(monthlyTax, config.currency);
+      els.annualTax.textContent = formatMoney(annualTax, config.currency);
+      els.monthlyNet.textContent = formatMoney(monthlyNet, config.currency);
+      els.annualNet.textContent = formatMoney(annualNet, config.currency);
+      els.effectiveRate.textContent = `${Math.round(effRate * 1000) / 10}%`;
+
+      // Also keep calculations consistent in case of rounding display:
+      // monthlyIncome is unused currently but useful if you extend UI later.
+      void monthlyIncome;
+    }
+
+    function validateAndMaybeCalculate({ shouldCalculate }) {
+      const v = validate();
+      if (!v.allValid) {
+        hideResults();
+        return;
+      }
+
+      if (shouldCalculate) {
+        calculate(v);
+        showResults();
+      }
+    }
+
+    function populateCountries() {
+      const entries = Object.entries(TAX_CONFIG)
+        .sort((a, b) => a[1].label.localeCompare(b[1].label));
+
+      for (const [code, info] of entries) {
+        const opt = document.createElement("option");
+        opt.value = code;
+        opt.textContent = info.label;
+        els.country.appendChild(opt);
+      }
+    }
+
+    // Wire up
+    populateCountries();
+    setFrequency("annual");
+
+    els.freqMonthly.addEventListener("click", () => setFrequency("monthly"));
+    els.freqAnnual.addEventListener("click", () => setFrequency("annual"));
+
+    els.country.addEventListener("change", () => validateAndMaybeCalculate({ shouldCalculate: false }));
+    els.income.addEventListener("input", () => validateAndMaybeCalculate({ shouldCalculate: false }));
+
+    els.calculate.addEventListener("click", () => validateAndMaybeCalculate({ shouldCalculate: true }));
+
+    // Press Enter to calculate from income field
+    els.income.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        validateAndMaybeCalculate({ shouldCalculate: true });
+      }
+    });
+  </script>
 
 </body>
 </html>
