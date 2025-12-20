@@ -18,7 +18,7 @@
       --radius-card: 24px;
       --radius-control: 8px;
 
-      --shadow-card: 0 12px 36px rgba(17, 24, 39, 0.08);
+      --shadow-card: 0px 4px 6px -2px #10182808, 0px 12px 16px -4px #10182814;
       --focus: 0 0 0 4px rgba(22, 70, 206, 0.18);
 
       /* 4px scale */
@@ -143,8 +143,8 @@
       border-radius: var(--radius-control);
       padding: 0 var(--space-16);
       cursor: pointer;
-      transition: transform 120ms ease, opacity 120ms ease, box-shadow 160ms ease;
-      box-shadow: 0 14px 30px rgba(22, 70, 206, 0.22);
+      transition: transform 120ms ease, opacity 120ms ease;
+      box-shadow: none;
     }
 
     .button:active { transform: translateY(0px); }
@@ -238,7 +238,7 @@
                 <p class="error" id="incomeError">Enter a valid income greater than 0.</p>
               </div>
 
-              <button class="button" id="calculate" type="button" disabled>Calculate</button>
+              <button class="button" id="calculate" type="button" disabled>Calculate Tax</button>
             </div>
           </div>
 
