@@ -293,12 +293,162 @@
      * Rates are expressed as decimals (e.g. 0.30 = 30%).
      */
     const TAX_CONFIG = {
-      US: { label: "United States", rate: 0.30, currency: "USD" },
-      UK: { label: "United Kingdom", rate: 0.25, currency: "USD" },
-      DE: { label: "Germany", rate: 0.35, currency: "USD" },
-      FR: { label: "France", rate: 0.32, currency: "USD" },
-      CA: { label: "Canada", rate: 0.28, currency: "USD" },
-      AU: { label: "Australia", rate: 0.29, currency: "USD" },
+      // NOTE: Config shape intentionally matches the existing calculator logic:
+      // - label: used for dropdown + results badge
+      // - rate: flat tax rate (decimal)
+      // - currency: kept as USD so display uses "$" for every country
+
+      // North America
+      US: { rate: 0.25, label: "United States", currency: "USD" },
+      CA: { rate: 0.26, label: "Canada", currency: "USD" },
+      MX: { rate: 0.30, label: "Mexico", currency: "USD" },
+
+      // South America
+      AR: { rate: 0.35, label: "Argentina", currency: "USD" },
+      BR: { rate: 0.27, label: "Brazil", currency: "USD" },
+      CL: { rate: 0.35, label: "Chile", currency: "USD" },
+      CO: { rate: 0.33, label: "Colombia", currency: "USD" },
+      PE: { rate: 0.29, label: "Peru", currency: "USD" },
+      VE: { rate: 0.34, label: "Venezuela", currency: "USD" },
+      EC: { rate: 0.35, label: "Ecuador", currency: "USD" },
+      BO: { rate: 0.25, label: "Bolivia", currency: "USD" },
+      PY: { rate: 0.10, label: "Paraguay", currency: "USD" },
+      UY: { rate: 0.25, label: "Uruguay", currency: "USD" },
+
+      // Europe - Western
+      UK: { rate: 0.20, label: "United Kingdom", currency: "USD" },
+      DE: { rate: 0.42, label: "Germany", currency: "USD" },
+      FR: { rate: 0.45, label: "France", currency: "USD" },
+      IT: { rate: 0.43, label: "Italy", currency: "USD" },
+      ES: { rate: 0.24, label: "Spain", currency: "USD" },
+      NL: { rate: 0.37, label: "Netherlands", currency: "USD" },
+      BE: { rate: 0.50, label: "Belgium", currency: "USD" },
+      AT: { rate: 0.50, label: "Austria", currency: "USD" },
+      CH: { rate: 0.21, label: "Switzerland", currency: "USD" },
+      PT: { rate: 0.28, label: "Portugal", currency: "USD" },
+      IE: { rate: 0.20, label: "Ireland", currency: "USD" },
+      LU: { rate: 0.42, label: "Luxembourg", currency: "USD" },
+
+      // Europe - Northern
+      SE: { rate: 0.52, label: "Sweden", currency: "USD" },
+      NO: { rate: 0.38, label: "Norway", currency: "USD" },
+      DK: { rate: 0.55, label: "Denmark", currency: "USD" },
+      FI: { rate: 0.51, label: "Finland", currency: "USD" },
+      IS: { rate: 0.46, label: "Iceland", currency: "USD" },
+
+      // Europe - Eastern
+      PL: { rate: 0.32, label: "Poland", currency: "USD" },
+      CZ: { rate: 0.23, label: "Czech Republic", currency: "USD" },
+      HU: { rate: 0.15, label: "Hungary", currency: "USD" },
+      RO: { rate: 0.10, label: "Romania", currency: "USD" },
+      BG: { rate: 0.10, label: "Bulgaria", currency: "USD" },
+      SK: { rate: 0.25, label: "Slovakia", currency: "USD" },
+      HR: { rate: 0.30, label: "Croatia", currency: "USD" },
+      SI: { rate: 0.50, label: "Slovenia", currency: "USD" },
+      LT: { rate: 0.32, label: "Lithuania", currency: "USD" },
+      LV: { rate: 0.31, label: "Latvia", currency: "USD" },
+      EE: { rate: 0.20, label: "Estonia", currency: "USD" },
+      RS: { rate: 0.20, label: "Serbia", currency: "USD" },
+      UA: { rate: 0.18, label: "Ukraine", currency: "USD" },
+
+      // Europe - Southern
+      GR: { rate: 0.44, label: "Greece", currency: "USD" },
+      CY: { rate: 0.35, label: "Cyprus", currency: "USD" },
+      MT: { rate: 0.35, label: "Malta", currency: "USD" },
+
+      // Middle East
+      AE: { rate: 0.00, label: "United Arab Emirates", currency: "USD" },
+      SA: { rate: 0.00, label: "Saudi Arabia", currency: "USD" },
+      IL: { rate: 0.50, label: "Israel", currency: "USD" },
+      TR: { rate: 0.35, label: "Turkey", currency: "USD" },
+      JO: { rate: 0.20, label: "Jordan", currency: "USD" },
+      LB: { rate: 0.15, label: "Lebanon", currency: "USD" },
+      KW: { rate: 0.00, label: "Kuwait", currency: "USD" },
+      QA: { rate: 0.00, label: "Qatar", currency: "USD" },
+      OM: { rate: 0.00, label: "Oman", currency: "USD" },
+      BH: { rate: 0.00, label: "Bahrain", currency: "USD" },
+
+      // Asia - East
+      CN: { rate: 0.35, label: "China", currency: "USD" },
+      JP: { rate: 0.45, label: "Japan", currency: "USD" },
+      KR: { rate: 0.38, label: "South Korea", currency: "USD" },
+      TW: { rate: 0.40, label: "Taiwan", currency: "USD" },
+      HK: { rate: 0.15, label: "Hong Kong", currency: "USD" },
+      MO: { rate: 0.12, label: "Macau", currency: "USD" },
+
+      // Asia - Southeast
+      SG: { rate: 0.17, label: "Singapore", currency: "USD" },
+      MY: { rate: 0.28, label: "Malaysia", currency: "USD" },
+      TH: { rate: 0.35, label: "Thailand", currency: "USD" },
+      ID: { rate: 0.30, label: "Indonesia", currency: "USD" },
+      PH: { rate: 0.32, label: "Philippines", currency: "USD" },
+      VN: { rate: 0.35, label: "Vietnam", currency: "USD" },
+      MM: { rate: 0.25, label: "Myanmar", currency: "USD" },
+      KH: { rate: 0.20, label: "Cambodia", currency: "USD" },
+      LA: { rate: 0.24, label: "Laos", currency: "USD" },
+      BN: { rate: 0.00, label: "Brunei", currency: "USD" },
+
+      // Asia - South
+      IN: { rate: 0.30, label: "India", currency: "USD" },
+      PK: { rate: 0.29, label: "Pakistan", currency: "USD" },
+      BD: { rate: 0.30, label: "Bangladesh", currency: "USD" },
+      LK: { rate: 0.24, label: "Sri Lanka", currency: "USD" },
+      NP: { rate: 0.30, label: "Nepal", currency: "USD" },
+
+      // Oceania
+      AU: { rate: 0.30, label: "Australia", currency: "USD" },
+      NZ: { rate: 0.33, label: "New Zealand", currency: "USD" },
+      FJ: { rate: 0.20, label: "Fiji", currency: "USD" },
+      PG: { rate: 0.30, label: "Papua New Guinea", currency: "USD" },
+
+      // Africa - North
+      EG: { rate: 0.25, label: "Egypt", currency: "USD" },
+      DZ: { rate: 0.35, label: "Algeria", currency: "USD" },
+      MA: { rate: 0.38, label: "Morocco", currency: "USD" },
+      TN: { rate: 0.35, label: "Tunisia", currency: "USD" },
+      LY: { rate: 0.10, label: "Libya", currency: "USD" },
+
+      // Africa - West
+      NG: { rate: 0.24, label: "Nigeria", currency: "USD" },
+      GH: { rate: 0.25, label: "Ghana", currency: "USD" },
+      CI: { rate: 0.25, label: "Côte d'Ivoire", currency: "USD" },
+      SN: { rate: 0.40, label: "Senegal", currency: "USD" },
+
+      // Africa - East
+      KE: { rate: 0.30, label: "Kenya", currency: "USD" },
+      TZ: { rate: 0.30, label: "Tanzania", currency: "USD" },
+      UG: { rate: 0.30, label: "Uganda", currency: "USD" },
+      ET: { rate: 0.35, label: "Ethiopia", currency: "USD" },
+      RW: { rate: 0.30, label: "Rwanda", currency: "USD" },
+
+      // Africa - South
+      ZA: { rate: 0.45, label: "South Africa", currency: "USD" },
+      ZW: { rate: 0.25, label: "Zimbabwe", currency: "USD" },
+      BW: { rate: 0.25, label: "Botswana", currency: "USD" },
+      NA: { rate: 0.37, label: "Namibia", currency: "USD" },
+      MU: { rate: 0.15, label: "Mauritius", currency: "USD" },
+
+      // Caribbean
+      JM: { rate: 0.25, label: "Jamaica", currency: "USD" },
+      TT: { rate: 0.30, label: "Trinidad and Tobago", currency: "USD" },
+      BB: { rate: 0.25, label: "Barbados", currency: "USD" },
+      BS: { rate: 0.00, label: "Bahamas", currency: "USD" },
+
+      // Central America
+      CR: { rate: 0.30, label: "Costa Rica", currency: "USD" },
+      PA: { rate: 0.25, label: "Panama", currency: "USD" },
+      GT: { rate: 0.25, label: "Guatemala", currency: "USD" },
+      SV: { rate: 0.30, label: "El Salvador", currency: "USD" },
+      HN: { rate: 0.25, label: "Honduras", currency: "USD" },
+      NI: { rate: 0.30, label: "Nicaragua", currency: "USD" },
+
+      // Central Asia
+      KZ: { rate: 0.10, label: "Kazakhstan", currency: "USD" },
+      UZ: { rate: 0.12, label: "Uzbekistan", currency: "USD" },
+
+      // Other
+      RU: { rate: 0.13, label: "Russia", currency: "USD" },
+      BY: { rate: 0.13, label: "Belarus", currency: "USD" },
     };
 
     const els = {
