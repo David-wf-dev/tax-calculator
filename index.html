@@ -157,12 +157,13 @@
       transform: translateY(8px);
       transition: max-height 360ms ease, opacity 240ms ease, transform 240ms ease;
       will-change: max-height, opacity, transform;
+      pointer-events: none;
     }
 
     .results.is-visible {
-      max-height: 520px;
       opacity: 1;
       transform: translateY(0);
+      pointer-events: auto;
     }
 
     .results-grid {
@@ -251,7 +252,7 @@
               </div>
             </div>
 
-            <div class="results" id="results" hidden>
+            <div class="results" id="results" aria-hidden="true" style="max-height:0px;">
               <div class="results-grid">
                 <div class="metric">
                   <p class="k">Monthly tax</p>
@@ -474,6 +475,7 @@
     };
 
     let incomeFrequency = "annual"; // "monthly" | "annual"
+    let hasCalculated = false;
 
     function formatMoney(value, currency) {
       try {
@@ -500,20 +502,28 @@
       els.freqMonthly.setAttribute("aria-pressed", String(isMonthly));
       els.freqAnnual.setAttribute("aria-pressed", String(!isMonthly));
       els.freqLabel.textContent = isMonthly ? "monthly" : "annual";
+      hasCalculated = false;
+      hideResults();
       validateAndMaybeCalculate({ shouldCalculate: false });
     }
 
     function showResults() {
-      els.results.hidden = false;
-      // force reflow so transition triggers from hidden state
-      void els.results.offsetHeight;
-      els.results.classList.add("is-visible");
+      els.results.setAttribute("aria-hidden", "false");
       els.resultsHint.style.display = "none";
+      els.results.classList.add("is-visible");
+      // Expand (no scrolling): animate to actual content height.
+      requestAnimationFrame(() => {
+        els.results.style.maxHeight = `${els.results.scrollHeight}px`;
+      });
     }
 
     function hideResults() {
+      // Animate collapse (no scrolling): set current height -> 0.
+      els.results.style.maxHeight = `${els.results.scrollHeight}px`;
+      void els.results.offsetHeight;
       els.results.classList.remove("is-visible");
-      els.results.hidden = true;
+      els.results.style.maxHeight = "0px";
+      els.results.setAttribute("aria-hidden", "true");
       els.rateBadge.style.display = "none";
       els.resultsHint.style.display = "";
     }
@@ -569,11 +579,20 @@
     function validateAndMaybeCalculate({ shouldCalculate }) {
       const v = validate();
       if (!v.allValid) {
+        hasCalculated = false;
+        hideResults();
+        return;
+      }
+
+      // If user edits inputs after calculating, keep results hidden until they re-calculate.
+      if (!shouldCalculate && hasCalculated) {
+        hasCalculated = false;
         hideResults();
         return;
       }
 
       if (shouldCalculate) {
+        hasCalculated = true;
         calculate(v);
         showResults();
       }
@@ -608,6 +627,13 @@
       if (e.key === "Enter") {
         e.preventDefault();
         validateAndMaybeCalculate({ shouldCalculate: true });
+      }
+    });
+
+    // Keep expanded height correct on responsive reflow.
+    window.addEventListener("resize", () => {
+      if (els.results.classList.contains("is-visible")) {
+        els.results.style.maxHeight = `${els.results.scrollHeight}px`;
       }
     });
   </script>
