@@ -49,7 +49,8 @@
 
     .grid-2col {
       display: grid;
-      grid-template-columns: 1.05fr 0.95fr;
+      /* Results should expand below the form (single column). */
+      grid-template-columns: 1fr;
       gap: var(--space-20);
       align-items: start;
     }
@@ -148,6 +149,8 @@
 
     .button:active { transform: translateY(0px); }
     .button:disabled { cursor: not-allowed; transform: none; }
+    .button.is-disabled { opacity: 0.65; }
+    .button.is-disabled:active { transform: none; }
 
     /* Results: hidden until valid input + smooth reveal */
     .results {
@@ -238,7 +241,7 @@
                 <p class="error" id="incomeError">Enter a valid income greater than 0.</p>
               </div>
 
-              <button class="button" id="calculate" type="button" disabled>Calculate Tax</button>
+              <button class="button is-disabled" id="calculate" type="button" aria-disabled="true">Calculate Tax</button>
             </div>
           </div>
 
@@ -476,6 +479,7 @@
 
     let incomeFrequency = "annual"; // "monthly" | "annual"
     let hasCalculated = false;
+    let hasAttemptedCalculate = false;
 
     function formatMoney(value, currency) {
       try {
@@ -502,9 +506,14 @@
       els.freqMonthly.setAttribute("aria-pressed", String(isMonthly));
       els.freqAnnual.setAttribute("aria-pressed", String(!isMonthly));
       els.freqLabel.textContent = isMonthly ? "monthly" : "annual";
-      hasCalculated = false;
       hideResults();
       validateAndMaybeCalculate({ shouldCalculate: false });
+    }
+
+    function isClearedToDefault() {
+      const countryEmpty = !String(els.country.value || "").trim();
+      const incomeEmpty = !String(els.income.value || "").trim();
+      return countryEmpty && incomeEmpty;
     }
 
     function showResults() {
@@ -518,8 +527,12 @@
     }
 
     function hideResults() {
+      hasCalculated = false;
       // Animate collapse (no scrolling): set current height -> 0.
-      els.results.style.maxHeight = `${els.results.scrollHeight}px`;
+      const currentHeight = els.results.style.maxHeight === "none"
+        ? els.results.scrollHeight
+        : els.results.scrollHeight;
+      els.results.style.maxHeight = `${currentHeight}px`;
       void els.results.offsetHeight;
       els.results.classList.remove("is-visible");
       els.results.style.maxHeight = "0px";
@@ -528,22 +541,23 @@
       els.resultsHint.style.display = "";
     }
 
-    function setFieldValidity(fieldEl, isValid) {
-      fieldEl.classList.toggle("field-invalid", !isValid);
+    function setFieldValidity(fieldEl, isValid, { showErrors }) {
+      fieldEl.classList.toggle("field-invalid", Boolean(showErrors && !isValid));
     }
 
-    function validate() {
+    function validate({ showErrors }) {
       const countryCode = els.country.value;
       const income = parseIncome(els.income.value);
 
       const countryValid = Boolean(countryCode && TAX_CONFIG[countryCode]);
       const incomeValid = Number.isFinite(income) && income > 0;
 
-      setFieldValidity(els.countryField, countryValid);
-      setFieldValidity(els.incomeField, incomeValid);
+      setFieldValidity(els.countryField, countryValid, { showErrors });
+      setFieldValidity(els.incomeField, incomeValid, { showErrors });
 
       const allValid = countryValid && incomeValid;
-      els.calculate.disabled = !allValid;
+      els.calculate.classList.toggle("is-disabled", !allValid);
+      els.calculate.setAttribute("aria-disabled", String(!allValid));
 
       return { allValid, countryCode, income };
     }
@@ -577,16 +591,16 @@
     }
 
     function validateAndMaybeCalculate({ shouldCalculate }) {
-      const v = validate();
-      if (!v.allValid) {
-        hasCalculated = false;
+      // If user clears the form, revert to the default state.
+      if (!shouldCalculate && isClearedToDefault()) {
+        hasAttemptedCalculate = false;
         hideResults();
+        validate({ showErrors: false });
         return;
       }
 
-      // If user edits inputs after calculating, keep results hidden until they re-calculate.
-      if (!shouldCalculate && hasCalculated) {
-        hasCalculated = false;
+      const v = validate({ showErrors: shouldCalculate || hasAttemptedCalculate });
+      if (!v.allValid) {
         hideResults();
         return;
       }
@@ -617,15 +631,25 @@
     els.freqMonthly.addEventListener("click", () => setFrequency("monthly"));
     els.freqAnnual.addEventListener("click", () => setFrequency("annual"));
 
-    els.country.addEventListener("change", () => validateAndMaybeCalculate({ shouldCalculate: false }));
-    els.income.addEventListener("input", () => validateAndMaybeCalculate({ shouldCalculate: false }));
+    els.country.addEventListener("change", () => {
+      if (hasCalculated) hideResults();
+      validateAndMaybeCalculate({ shouldCalculate: false });
+    });
+    els.income.addEventListener("input", () => {
+      if (hasCalculated) hideResults();
+      validateAndMaybeCalculate({ shouldCalculate: false });
+    });
 
-    els.calculate.addEventListener("click", () => validateAndMaybeCalculate({ shouldCalculate: true }));
+    els.calculate.addEventListener("click", () => {
+      hasAttemptedCalculate = true;
+      validateAndMaybeCalculate({ shouldCalculate: true });
+    });
 
     // Press Enter to calculate from income field
     els.income.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
         e.preventDefault();
+        hasAttemptedCalculate = true;
         validateAndMaybeCalculate({ shouldCalculate: true });
       }
     });
@@ -633,7 +657,16 @@
     // Keep expanded height correct on responsive reflow.
     window.addEventListener("resize", () => {
       if (els.results.classList.contains("is-visible")) {
+        // If we set max-height to none after transition, re-measure on resize.
         els.results.style.maxHeight = `${els.results.scrollHeight}px`;
+      }
+    });
+
+    // After expand transition completes, unlock height so it can grow naturally.
+    els.results.addEventListener("transitionend", (e) => {
+      if (e.propertyName !== "max-height") return;
+      if (els.results.classList.contains("is-visible")) {
+        els.results.style.maxHeight = "none";
       }
     });
   </script>
