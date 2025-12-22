@@ -479,7 +479,6 @@
 
     let incomeFrequency = "annual"; // "monthly" | "annual"
     let hasCalculated = false;
-    let hasAttemptedCalculate = false;
 
     function formatMoney(value, currency) {
       try {
@@ -593,13 +592,13 @@
     function validateAndMaybeCalculate({ shouldCalculate }) {
       // If user clears the form, revert to the default state.
       if (!shouldCalculate && isClearedToDefault()) {
-        hasAttemptedCalculate = false;
         hideResults();
         validate({ showErrors: false });
         return;
       }
 
-      const v = validate({ showErrors: shouldCalculate || hasAttemptedCalculate });
+      // Only show error messages on an explicit calculate attempt.
+      const v = validate({ showErrors: shouldCalculate });
       if (!v.allValid) {
         hideResults();
         return;
@@ -641,7 +640,6 @@
     });
 
     els.calculate.addEventListener("click", () => {
-      hasAttemptedCalculate = true;
       validateAndMaybeCalculate({ shouldCalculate: true });
     });
 
@@ -649,7 +647,6 @@
     els.income.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
         e.preventDefault();
-        hasAttemptedCalculate = true;
         validateAndMaybeCalculate({ shouldCalculate: true });
       }
     });
