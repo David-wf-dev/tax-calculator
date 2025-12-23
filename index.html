@@ -532,7 +532,14 @@
       els.freqMonthly.setAttribute("aria-pressed", String(isMonthly));
       els.freqAnnual.setAttribute("aria-pressed", String(!isMonthly));
       els.freqLabel.textContent = isMonthly ? "monthly" : "annual";
-      hideResults();
+      // Switching frequency should not reset results; if results are visible,
+      // re-calculate immediately using the new frequency.
+      const v = validate({ showErrors: false });
+      if (hasCalculated && v.allValid) {
+        calculate(v);
+        showResults();
+        return;
+      }
       validateAndMaybeCalculate({ shouldCalculate: false });
     }
 
