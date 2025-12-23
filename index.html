@@ -44,14 +44,16 @@
 
     /* Webflow-style layout primitives (kept small on purpose) */
     .page-wrapper { min-height: 100%; padding: var(--space-32) var(--space-20); }
-    .container { max-width: 1040px; margin: 0 auto; }
+    /* Allow two 40rem cards side-by-side */
+    .container { max-width: 86rem; margin: 0 auto; }
     .section { padding: 0; }
 
     .grid-2col {
       display: grid;
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(0, 40rem) minmax(0, 40rem);
       gap: var(--space-20);
       align-items: start;
+      justify-content: center;
     }
 
     @media (max-width: 991px) {
@@ -67,8 +69,7 @@
       background: #fff;
       max-width: 40rem;
       width: 100%;
-      margin-left: auto;
-      margin-right: auto;
+      margin: 0;
     }
 
     .stack { display: flex; flex-direction: column; gap: var(--space-16); }
@@ -245,45 +246,45 @@
               <button class="button" id="calculate" type="button">Calculate Tax</button>
             </div>
           </div>
-        </div>
 
-        <!-- Results (separate section so it has its own height and pushes content down) -->
-        <div class="card-2" id="resultsCard" aria-live="polite" hidden>
-          <div class="row row-between">
-            <h2 class="heading-md">Results</h2>
-            <div class="badge" id="rateBadge" style="display:none;">
-              <span class="dot" aria-hidden="true"></span>
-              <span><span id="countryName">—</span> rate: <strong id="rateValue">—</strong></span>
+          <!-- Results (always visible card, inner panel expands on Calculate) -->
+          <div class="card-2" aria-live="polite">
+            <div class="row row-between">
+              <h2 class="heading-md">Results</h2>
+              <div class="badge" id="rateBadge" style="display:none;">
+                <span class="dot" aria-hidden="true"></span>
+                <span><span id="countryName">—</span> rate: <strong id="rateValue">—</strong></span>
+              </div>
             </div>
+
+            <div class="results" id="results" aria-hidden="true" style="max-height:0px;">
+              <div class="results-grid">
+                <div class="metric">
+                  <p class="k">Monthly tax</p>
+                  <p class="v" id="monthlyTax">—</p>
+                </div>
+                <div class="metric">
+                  <p class="k">Annual tax</p>
+                  <p class="v" id="annualTax">—</p>
+                </div>
+                <div class="metric">
+                  <p class="k">Monthly net</p>
+                  <p class="v" id="monthlyNet">—</p>
+                </div>
+                <div class="metric">
+                  <p class="k">Annual net</p>
+                  <p class="v" id="annualNet">—</p>
+                </div>
+              </div>
+
+              <div class="metric metric-spaced">
+                <p class="k">Effective tax rate</p>
+                <p class="v" id="effectiveRate">—</p>
+              </div>
+            </div>
+
+            <div class="text-muted text-sm" id="resultsHint">Fill in the form to see your results.</div>
           </div>
-
-          <div class="results" id="results" aria-hidden="true" style="max-height:0px;">
-            <div class="results-grid">
-              <div class="metric">
-                <p class="k">Monthly tax</p>
-                <p class="v" id="monthlyTax">—</p>
-              </div>
-              <div class="metric">
-                <p class="k">Annual tax</p>
-                <p class="v" id="annualTax">—</p>
-              </div>
-              <div class="metric">
-                <p class="k">Monthly net</p>
-                <p class="v" id="monthlyNet">—</p>
-              </div>
-              <div class="metric">
-                <p class="k">Annual net</p>
-                <p class="v" id="annualNet">—</p>
-              </div>
-            </div>
-
-            <div class="metric metric-spaced">
-              <p class="k">Effective tax rate</p>
-              <p class="v" id="effectiveRate">—</p>
-            </div>
-          </div>
-
-          <div class="text-muted text-sm" id="resultsHint">Fill in the form to see your results.</div>
         </div>
       </div>
     </div>
@@ -466,7 +467,6 @@
       countryError: document.getElementById("countryError"),
       incomeError: document.getElementById("incomeError"),
 
-      resultsCard: document.getElementById("resultsCard"),
       results: document.getElementById("results"),
       resultsHint: document.getElementById("resultsHint"),
       rateBadge: document.getElementById("rateBadge"),
@@ -482,14 +482,26 @@
     let incomeFrequency = "annual"; // "monthly" | "annual"
     let hasCalculated = false;
 
+    let heightPostRaf = 0;
     function notifyParentHeight() {
       // When embedded in an iframe, the parent page won't auto-resize.
-      // This lets the parent adjust the iframe height via postMessage.
+      // Post a robust height measurement to the parent so it can resize the iframe.
       try {
-        if (window.parent && window.parent !== window) {
-          const height = Math.ceil(document.documentElement.scrollHeight);
+        if (!window.parent || window.parent === window) return;
+        if (heightPostRaf) cancelAnimationFrame(heightPostRaf);
+        heightPostRaf = requestAnimationFrame(() => {
+          const body = document.body;
+          const html = document.documentElement;
+          const height = Math.ceil(Math.max(
+            body?.scrollHeight ?? 0,
+            body?.offsetHeight ?? 0,
+            html?.clientHeight ?? 0,
+            html?.scrollHeight ?? 0,
+            html?.offsetHeight ?? 0,
+          ));
           window.parent.postMessage({ type: "tax-calculator:height", height }, "*");
-        }
+          heightPostRaf = 0;
+        });
       } catch {
         // ignore
       }
@@ -531,7 +543,6 @@
     }
 
     function showResults() {
-      els.resultsCard.hidden = false;
       els.results.setAttribute("aria-hidden", "false");
       els.resultsHint.style.display = "none";
       els.results.classList.add("is-visible");
@@ -555,7 +566,6 @@
       els.results.setAttribute("aria-hidden", "true");
       els.rateBadge.style.display = "none";
       els.resultsHint.style.display = "";
-      els.resultsCard.hidden = true;
       notifyParentHeight();
     }
 
@@ -644,6 +654,15 @@
     populateCountries();
     setFrequency("annual");
     notifyParentHeight();
+
+    // Continuously report height changes (fonts load, results expand, responsive wraps, etc.)
+    try {
+      const ro = new ResizeObserver(() => notifyParentHeight());
+      ro.observe(document.documentElement);
+      ro.observe(document.body);
+    } catch {
+      // ResizeObserver not supported; fall back to the explicit calls elsewhere.
+    }
 
     els.freqMonthly.addEventListener("click", () => setFrequency("monthly"));
     els.freqAnnual.addEventListener("click", () => setFrequency("annual"));
