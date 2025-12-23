@@ -66,6 +66,10 @@
       padding: var(--space-24);
       box-shadow: var(--shadow-card);
       background: #fff;
+      max-width: 40rem;
+      width: 100%;
+      margin-left: auto;
+      margin-right: auto;
     }
 
     .stack { display: flex; flex-direction: column; gap: var(--space-16); }
@@ -479,6 +483,19 @@
     let incomeFrequency = "annual"; // "monthly" | "annual"
     let hasCalculated = false;
 
+    function notifyParentHeight() {
+      // When embedded in an iframe, the parent page won't auto-resize.
+      // This lets the parent adjust the iframe height via postMessage.
+      try {
+        if (window.parent && window.parent !== window) {
+          const height = Math.ceil(document.documentElement.scrollHeight);
+          window.parent.postMessage({ type: "tax-calculator:height", height }, "*");
+        }
+      } catch {
+        // ignore
+      }
+    }
+
     function formatMoney(value, currency) {
       try {
         return new Intl.NumberFormat(undefined, {
@@ -522,6 +539,7 @@
       // Expand (no scrolling): animate to actual content height.
       requestAnimationFrame(() => {
         els.results.style.maxHeight = `${els.results.scrollHeight}px`;
+        notifyParentHeight();
       });
     }
 
@@ -539,6 +557,7 @@
       els.rateBadge.style.display = "none";
       els.resultsHint.style.display = "";
       els.resultsCard.hidden = true;
+      notifyParentHeight();
     }
 
     function setFieldValidity(fieldEl, isValid, { showErrors }) {
@@ -625,6 +644,7 @@
     // Wire up
     populateCountries();
     setFrequency("annual");
+    notifyParentHeight();
 
     els.freqMonthly.addEventListener("click", () => setFrequency("monthly"));
     els.freqAnnual.addEventListener("click", () => setFrequency("annual"));
@@ -656,6 +676,7 @@
         // If we set max-height to none after transition, re-measure on resize.
         els.results.style.maxHeight = `${els.results.scrollHeight}px`;
       }
+      notifyParentHeight();
     });
 
     // After expand transition completes, unlock height so it can grow naturally.
@@ -664,6 +685,7 @@
       if (els.results.classList.contains("is-visible")) {
         els.results.style.maxHeight = "none";
       }
+      notifyParentHeight();
     });
   </script>
 
