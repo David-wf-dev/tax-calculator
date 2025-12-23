@@ -54,15 +54,9 @@
       align-items: start;
     }
 
-    /* When results are visible, show both cards in the same row */
-    .grid-2col.has-results {
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    }
-
     @media (max-width: 991px) {
       .page-wrapper { padding: var(--space-24) var(--space-16); }
-      .grid-2col,
-      .grid-2col.has-results { grid-template-columns: 1fr; }
+      .grid-2col { grid-template-columns: 1fr; }
     }
 
     .card, .card-2 {
@@ -221,7 +215,7 @@
   <div class="page-wrapper">
     <div class="container section">
       <div class="stack stack-lg">
-        <div class="grid-2col" id="calculatorGrid">
+        <div class="grid-2col">
           <!-- Calculator -->
           <div class="card">
             <div class="stack">
@@ -251,45 +245,45 @@
               <button class="button" id="calculate" type="button">Calculate Tax</button>
             </div>
           </div>
+        </div>
 
-          <!-- Results -->
-          <div class="card-2" id="resultsCard" aria-live="polite" hidden>
-            <div class="row row-between">
-              <h2 class="heading-md">Results</h2>
-              <div class="badge" id="rateBadge" style="display:none;">
-                <span class="dot" aria-hidden="true"></span>
-                <span><span id="countryName">—</span> rate: <strong id="rateValue">—</strong></span>
-              </div>
+        <!-- Results (separate section so it has its own height and pushes content down) -->
+        <div class="card-2" id="resultsCard" aria-live="polite" hidden>
+          <div class="row row-between">
+            <h2 class="heading-md">Results</h2>
+            <div class="badge" id="rateBadge" style="display:none;">
+              <span class="dot" aria-hidden="true"></span>
+              <span><span id="countryName">—</span> rate: <strong id="rateValue">—</strong></span>
             </div>
-
-            <div class="results" id="results" aria-hidden="true" style="max-height:0px;">
-              <div class="results-grid">
-                <div class="metric">
-                  <p class="k">Monthly tax</p>
-                  <p class="v" id="monthlyTax">—</p>
-                </div>
-                <div class="metric">
-                  <p class="k">Annual tax</p>
-                  <p class="v" id="annualTax">—</p>
-                </div>
-                <div class="metric">
-                  <p class="k">Monthly net</p>
-                  <p class="v" id="monthlyNet">—</p>
-                </div>
-                <div class="metric">
-                  <p class="k">Annual net</p>
-                  <p class="v" id="annualNet">—</p>
-                </div>
-              </div>
-
-              <div class="metric metric-spaced">
-                <p class="k">Effective tax rate</p>
-                <p class="v" id="effectiveRate">—</p>
-              </div>
-            </div>
-
-            <div class="text-muted text-sm" id="resultsHint">Fill in the form to see your results.</div>
           </div>
+
+          <div class="results" id="results" aria-hidden="true" style="max-height:0px;">
+            <div class="results-grid">
+              <div class="metric">
+                <p class="k">Monthly tax</p>
+                <p class="v" id="monthlyTax">—</p>
+              </div>
+              <div class="metric">
+                <p class="k">Annual tax</p>
+                <p class="v" id="annualTax">—</p>
+              </div>
+              <div class="metric">
+                <p class="k">Monthly net</p>
+                <p class="v" id="monthlyNet">—</p>
+              </div>
+              <div class="metric">
+                <p class="k">Annual net</p>
+                <p class="v" id="annualNet">—</p>
+              </div>
+            </div>
+
+            <div class="metric metric-spaced">
+              <p class="k">Effective tax rate</p>
+              <p class="v" id="effectiveRate">—</p>
+            </div>
+          </div>
+
+          <div class="text-muted text-sm" id="resultsHint">Fill in the form to see your results.</div>
         </div>
       </div>
     </div>
@@ -460,7 +454,6 @@
     };
 
     const els = {
-      grid: document.getElementById("calculatorGrid"),
       country: document.getElementById("country"),
       income: document.getElementById("income"),
       calculate: document.getElementById("calculate"),
@@ -539,7 +532,6 @@
 
     function showResults() {
       els.resultsCard.hidden = false;
-      els.grid.classList.add("has-results");
       els.results.setAttribute("aria-hidden", "false");
       els.resultsHint.style.display = "none";
       els.results.classList.add("is-visible");
@@ -564,7 +556,6 @@
       els.rateBadge.style.display = "none";
       els.resultsHint.style.display = "";
       els.resultsCard.hidden = true;
-      els.grid.classList.remove("has-results");
       notifyParentHeight();
     }
 
