@@ -482,14 +482,26 @@
     let incomeFrequency = "annual"; // "monthly" | "annual"
     let hasCalculated = false;
 
+    let heightPostRaf = 0;
     function notifyParentHeight() {
       // When embedded in an iframe, the parent page won't auto-resize.
-      // This lets the parent adjust the iframe height via postMessage.
+      // Post a robust height measurement to the parent so it can resize the iframe.
       try {
-        if (window.parent && window.parent !== window) {
-          const height = Math.ceil(document.documentElement.scrollHeight);
+        if (!window.parent || window.parent === window) return;
+        if (heightPostRaf) cancelAnimationFrame(heightPostRaf);
+        heightPostRaf = requestAnimationFrame(() => {
+          const body = document.body;
+          const html = document.documentElement;
+          const height = Math.ceil(Math.max(
+            body?.scrollHeight ?? 0,
+            body?.offsetHeight ?? 0,
+            html?.clientHeight ?? 0,
+            html?.scrollHeight ?? 0,
+            html?.offsetHeight ?? 0,
+          ));
           window.parent.postMessage({ type: "tax-calculator:height", height }, "*");
-        }
+          heightPostRaf = 0;
+        });
       } catch {
         // ignore
       }
@@ -644,6 +656,15 @@
     populateCountries();
     setFrequency("annual");
     notifyParentHeight();
+
+    // Continuously report height changes (fonts load, results expand, responsive wraps, etc.)
+    try {
+      const ro = new ResizeObserver(() => notifyParentHeight());
+      ro.observe(document.documentElement);
+      ro.observe(document.body);
+    } catch {
+      // ResizeObserver not supported; fall back to the explicit calls elsewhere.
+    }
 
     els.freqMonthly.addEventListener("click", () => setFrequency("monthly"));
     els.freqAnnual.addEventListener("click", () => setFrequency("annual"));
