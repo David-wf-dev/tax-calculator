@@ -56,6 +56,19 @@
       justify-content: center;
     }
 
+    /* Responsive: stack cards + remove fixed max-width under 1120px */
+    @media (max-width: 1120px) {
+      .grid-2col {
+        grid-template-columns: 1fr;
+        justify-content: stretch;
+      }
+
+      .card, .card-2 {
+        max-width: none;
+        width: auto;
+      }
+    }
+
     @media (max-width: 991px) {
       .page-wrapper { padding: var(--space-24) var(--space-16); }
       .grid-2col { grid-template-columns: 1fr; }
