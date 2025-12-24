@@ -491,12 +491,16 @@
         heightPostRaf = requestAnimationFrame(() => {
           const body = document.body;
           const html = document.documentElement;
+          // NOTE:
+          // - scrollHeight can stay large even when content is clipped by max-height + overflow:hidden.
+          // - offsetHeight / bounding rect reflect the laid-out height we want the iframe to match.
+          const bodyRectH = body?.getBoundingClientRect?.().height ?? 0;
+          const htmlRectH = html?.getBoundingClientRect?.().height ?? 0;
           const height = Math.ceil(Math.max(
-            body?.scrollHeight ?? 0,
             body?.offsetHeight ?? 0,
-            html?.clientHeight ?? 0,
-            html?.scrollHeight ?? 0,
             html?.offsetHeight ?? 0,
+            bodyRectH,
+            htmlRectH,
           ));
           window.parent.postMessage({ type: "tax-calculator:height", height }, "*");
           heightPostRaf = 0;
@@ -674,7 +678,18 @@
     els.freqAnnual.addEventListener("click", () => setFrequency("annual"));
 
     els.country.addEventListener("change", () => {
-      if (hasCalculated) hideResults();
+      // After an initial calculation, country changes should live-update results
+      // (no need to click Calculate again).
+      if (hasCalculated) {
+        const v = validate({ showErrors: false });
+        if (v.allValid) {
+          calculate(v);
+          showResults();
+        } else {
+          hideResults();
+        }
+        return;
+      }
       validateAndMaybeCalculate({ shouldCalculate: false });
     });
     els.income.addEventListener("input", () => {
