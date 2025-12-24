@@ -625,17 +625,12 @@
     }
 
     function validateAndMaybeCalculate({ shouldCalculate }) {
-      // If user clears the form, revert to the default state.
-      if (!shouldCalculate && isClearedToDefault()) {
-        hideResults();
-        validate({ showErrors: false });
-        return;
-      }
-
       // Only show error messages on an explicit calculate attempt.
       const v = validate({ showErrors: shouldCalculate });
       if (!v.allValid) {
-        hideResults();
+        // Keep the last calculated results visible even if inputs become invalid.
+        // Only hide results if we haven't successfully calculated yet.
+        if (!hasCalculated) hideResults();
         return;
       }
 
@@ -683,15 +678,22 @@
         if (v.allValid) {
           calculate(v);
           showResults();
-        } else {
-          hideResults();
         }
         return;
       }
       validateAndMaybeCalculate({ shouldCalculate: false });
     });
     els.income.addEventListener("input", () => {
-      if (hasCalculated) hideResults();
+      if (hasCalculated) {
+        // Keep showing the last result while user is editing.
+        // Only update when the new income (and country) are valid.
+        const v = validate({ showErrors: false });
+        if (v.allValid) {
+          calculate(v);
+          showResults();
+        }
+        return;
+      }
       validateAndMaybeCalculate({ shouldCalculate: false });
     });
 
