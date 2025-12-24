@@ -625,6 +625,13 @@
     }
 
     function validateAndMaybeCalculate({ shouldCalculate }) {
+      // Only reset results to the default state when BOTH fields are reset.
+      if (isClearedToDefault()) {
+        hideResults();
+        validate({ showErrors: shouldCalculate });
+        return;
+      }
+
       // Only show error messages on an explicit calculate attempt.
       const v = validate({ showErrors: shouldCalculate });
       if (!v.allValid) {
@@ -674,6 +681,11 @@
       // After an initial calculation, country changes should live-update results
       // (no need to click Calculate again).
       if (hasCalculated) {
+        if (isClearedToDefault()) {
+          hideResults();
+          validate({ showErrors: false });
+          return;
+        }
         const v = validate({ showErrors: false });
         if (v.allValid) {
           calculate(v);
@@ -687,6 +699,11 @@
       if (hasCalculated) {
         // Keep showing the last result while user is editing.
         // Only update when the new income (and country) are valid.
+        if (isClearedToDefault()) {
+          hideResults();
+          validate({ showErrors: false });
+          return;
+        }
         const v = validate({ showErrors: false });
         if (v.allValid) {
           calculate(v);
